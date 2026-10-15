@@ -514,6 +514,14 @@ func (c *SessionsController) previewFile(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	assetPath := chi.URLParam(r, "*")
+	// chi routes against RawPath when present. Decode its wildcard exactly once
+	// before root selection and filesystem confinement, as artifactFile does.
+	if r.URL.RawPath != "" {
+		if assetPath, err = url.PathUnescape(assetPath); err != nil {
+			writePreviewResolveError(w, r, errPreviewFileNotFound)
+			return
+		}
+	}
 	if r.URL.Query().Get("source") == "artifact" {
 		c.serveRootedPreviewFile(w, r, sess.Metadata.ArtifactDir, assetPath)
 		return
